@@ -172,6 +172,7 @@ class SimpleSocket extends SimpleStickyError {
     private $is_open = false;
     private $sent = '';
     private $lock_size;
+    private $context = array();
 
     /**
      *    Opens a socket for reading and writing.
@@ -183,6 +184,8 @@ class SimpleSocket extends SimpleStickyError {
      */
     function __construct($host, $port, $timeout, $block_size = 255) {
         parent::__construct();
+        global $__simplebrowser__simpleSocketContext;
+        $this->context = $__simplebrowser__simpleSocketContext;
         if (! ($this->handle = $this->openSocket($host, $port, $error_number, $error, $timeout))) {
             $this->setError("Cannot open [$host:$port] with [$error] within [$timeout] seconds");
             return;
@@ -274,7 +277,7 @@ class SimpleSocket extends SimpleStickyError {
      *    @access protected
      */
     protected function openSocket($host, $port, &$error_number, &$error, $timeout) {
-        return @fsockopen($host, $port, $error_number, $error, $timeout);
+        return @stream_socket_client($host . ':' . $port, $error_number, $error, $timeout, STREAM_CLIENT_CONNECT, stream_context_create($this->context));
     }
 }
 

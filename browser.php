@@ -179,6 +179,19 @@ class SimpleBrowser {
         $this->history = $this->createHistory();
         $this->ignore_frames = false;
         $this->maximum_nested_frames = DEFAULT_MAX_NESTED_FRAMES;
+        $this->setStreamContext(null);
+    }
+
+    /**
+     *    Set the stream context we will use when opening sockets.
+     *    @access public
+     */
+    public function setStreamContext($options = null) {
+        // TODO: Do this nicely without using nasty global variables.
+        //       As this will effect all instances of the SimpleBrowser not
+        //       just this one.
+        global $__simplebrowser__simpleSocketContext;
+        $__simplebrowser__simpleSocketContext = is_array($options) ? $options : array();
     }
 
     /**
