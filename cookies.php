@@ -382,7 +382,7 @@ class SimpleCookieJar {
                 $pairs[] = $cookie->getName() . '=' . $cookie->getValue();
             }
         }
-        return $pairs;
+        return array_reverse($pairs);
     }
 }
 ?>
