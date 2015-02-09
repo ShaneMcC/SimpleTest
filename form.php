@@ -25,6 +25,7 @@ class SimpleForm {
     private $encoding;
     private $default_target;
     private $id;
+    private $name;
     private $buttons;
     private $images;
     private $widgets;
@@ -42,6 +43,7 @@ class SimpleForm {
         $this->encoding = $this->setEncodingClass($tag);
         $this->default_target = false;
         $this->id = $tag->getAttribute('id');
+        $this->name = $tag->getAttribute('name');
         $this->buttons = array();
         $this->images = array();
         $this->widgets = array();
@@ -135,6 +137,15 @@ class SimpleForm {
      */
     function getId() {
         return $this->id;
+    }
+
+    /**
+     *    Name of form.
+     *    @return string           Form Name.
+     *    @access public
+     */
+    function getName() {
+        return $this->name;
     }
 
     /**

@@ -486,6 +486,23 @@ class SimplePage {
     }
 
     /**
+     *    Finds a held form by the form name. A way of
+     *    identifying a specific form when we have control
+     *    of the HTML code.
+     *    @param string $name   Form label.
+     *    @return SimpleForm    Form object containing the matching ID.
+     *    @access public
+     */
+    function getFormByName($name) {
+        for ($i = 0; $i < count($this->forms); $i++) {
+            if ($this->forms[$i]->getName() == $name) {
+                return $this->forms[$i];
+            }
+        }
+        return null;
+    }
+
+    /**
      *    Sets a field on each form in which the field is
      *    available.
      *    @param SimpleSelector $selector    Field finder.
