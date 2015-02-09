@@ -1071,6 +1071,23 @@ class SimpleBrowser {
     }
 
     /**
+     *    Submits a form by the Name.
+     *    @param string $name     The form Name. No submit button value
+     *                            will be sent.
+     *    @return string/boolean  Page on success.
+     *    @access public
+     */
+    function submitFormByName($name, $additional = false) {
+        if (! ($form = $this->page->getFormByName($name))) {
+            return false;
+        }
+        $success = $this->load(
+                $form->getAction(),
+                $form->submit($additional));
+        return ($success ? $this->getContent() : $success);
+    }
+
+    /**
      *    Finds a URL by label. Will find the first link
      *    found with this link text by default, or a later
      *    one if an index is given. The match ignores case and
