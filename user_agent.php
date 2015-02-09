@@ -314,13 +314,18 @@ class SimpleUserAgent {
      */
     protected function createRoute($url) {
         if ($this->proxy) {
-            return new SimpleProxyRoute(
+            $route = new SimpleProxyRoute(
                     $url,
                     $this->proxy,
                     $this->proxy_username,
                     $this->proxy_password);
+        } else {
+            $route = new SimpleRoute($url);
         }
-        return new SimpleRoute($url);
+
+        $route->setUserAgent($this->useragent);
+
+        return $route;
     }
 
     /**
