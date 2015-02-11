@@ -221,6 +221,13 @@ class SimpleBrowser {
     }
 
     /**
+     * Set the function to use for getHostAddr
+     *
+     * @param  function $func Anonymous function to use.
+     */
+    public function setGetHostAddr($func) { $this->user_agent->setGetHostAddr($func); }
+
+    /**
      *    Get the HTML parser to use. Can be overridden by
      *    setParser. Otherwise scans through the available parsers and
      *    uses the first one which is available.

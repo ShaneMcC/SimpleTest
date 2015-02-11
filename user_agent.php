@@ -40,6 +40,7 @@ class SimpleUserAgent {
     private $additional_headers = array();
     private $useragent = '';
     private $http_referer;
+    private $getHostAddr = null;
 
     /**
      *    Starts with no cookies, realms or proxies.
@@ -334,6 +335,13 @@ class SimpleUserAgent {
     }
 
     /**
+     * Set the function to use for getHostAddr
+     *
+     * @param  function $func Anonymous function to use.
+     */
+    public function setGetHostAddr($func) { $this->getHostAddr = $func; }
+
+    /**
      *    Sets up either a direct route or via a proxy.
      *    @param SimpleUrl $url   Target to fetch as url object.
      *    @return SimpleRoute     Route to take to fetch URL.
@@ -351,6 +359,7 @@ class SimpleUserAgent {
         }
 
         $route->setUserAgent($this->useragent);
+        $route->setGetHostAddr($this->getHostAddr);
 
         return $route;
     }
