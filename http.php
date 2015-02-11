@@ -21,6 +21,7 @@ require_once(dirname(__FILE__) . '/url.php');
  *    @subpackage WebTester
  */
 class SimpleRoute {
+    private $getHostAddr = null;
     private $url;
     private $useragent = '';
 
@@ -107,6 +108,30 @@ class SimpleRoute {
     }
 
     /**
+     * Set the function to use for getHostAddr
+     *
+     * @param  function $func Anonymous function to use.
+     */
+    public function setGetHostAddr($func) { $this->getHostAddr = $func; }
+
+    /**
+     * Get the host address to use for the actual socket for the given host.
+     * By default this will just return the host in question, but instead you
+     * could provide an alternative host or IP to lookup and connect to.
+     *
+     * @param string $host Host to connect to
+     * @return  string Host to actually connect to
+     */
+    private function getHostAddr($host) {
+        if (!is_callable($this->getHostAddr)) {
+            $this->getHostAddr = function($host) { return $host; };
+        }
+
+        $call = $this->getHostAddr;
+        return $call($host);
+    }
+
+    /**
      *    Factory for socket.
      *    @param string $scheme                   Protocol to use.
      *    @param string $host                     Hostname to connect to.
@@ -119,9 +144,9 @@ class SimpleRoute {
         if (in_array($scheme, array('file'))) {
             return new SimpleFileSocket($this->url);
         } elseif (in_array($scheme, array('https'))) {
-            return new SimpleSecureSocket($host, $port, $timeout);
+            return new SimpleSecureSocket($this->getHostAddr($host), $port, $timeout);
         } else {
-            return new SimpleSocket($host, $port, $timeout);
+            return new SimpleSocket($this->getHostAddr($host), $port, $timeout);
         }
     }
 }
