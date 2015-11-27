@@ -277,7 +277,10 @@ class SimpleSocket extends SimpleStickyError {
      *    @access protected
      */
     protected function openSocket($host, $port, &$error_number, &$error, $timeout) {
-        return @stream_socket_client($host . ':' . $port, $error_number, $error, $timeout, STREAM_CLIENT_CONNECT, stream_context_create($this->context));
+        $context = stream_context_create($this->context);
+        // TODO: This should be handled better. DNS Hacking should happen here...
+        stream_context_set_option($context, 'ssl', 'verify_peer_name', false);
+        return @stream_socket_client($host . ':' . $port, $error_number, $error, $timeout, STREAM_CLIENT_CONNECT, $context);
     }
 }
 
