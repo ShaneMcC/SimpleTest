@@ -38,6 +38,9 @@ class SimpleUserAgent
     private $proxy_password = false;
     private $connection_timeout = DEFAULT_CONNECTION_TIMEOUT;
     private $additional_headers = array();
+    private $useragent = '';
+    private $http_referer;
+    private $getHostAddr = null;
 
     /**
      *    Starts with no cookies, realms or proxies.
@@ -62,6 +65,7 @@ class SimpleUserAgent
     {
         $this->cookie_jar->restartSession($date);
         $this->authenticator->restartSession();
+        $this->http_referer = null;
     }
 
     /**
@@ -73,6 +77,25 @@ class SimpleUserAgent
     public function addHeader($header)
     {
         $this->additional_headers[] = $header;
+    }
+
+    /**
+     *    Set an alternative user-agent to use for requests.
+     *    @param string $agent UserAgent to use.
+     */
+    public function setUserAgent($agent) {
+        $this->useragent = $agent;
+    }
+
+    /**
+     *    Sets the referrer to send with the request, as long as
+     *    it is not set explicitely via {@link addHeader()}.
+     *    @param string $referer      Referer URI to add to every
+     *                                request until cleared.
+     *    @access public
+     */
+    public function setReferer($referer) {
+        $this->http_referer = $referer;
     }
 
     /**
@@ -227,7 +250,7 @@ class SimpleUserAgent
      */
     public function fetchResponse($url, $encoding)
     {
-        if ($encoding->getMethod() != 'POST') {
+        if (!in_array($encoding->getMethod(), array('POST', 'PUT'))) {
             $url->addRequestParameters($encoding);
             $encoding->clear();
         }
@@ -260,14 +283,14 @@ class SimpleUserAgent
                 return $response;
             }
             $headers = $response->getHeaders();
-            $location = new SimpleUrl($headers->getLocation());
-            $url = $location->makeAbsolute($url);
             if ($this->cookies_enabled) {
                 $headers->writeCookiesToJar($this->cookie_jar, $url);
             }
             if (! $headers->isRedirect()) {
                 break;
             }
+            $location = new SimpleUrl($headers->getLocation());
+            $url = $location->makeAbsolute($url);
             $encoding = new SimpleGetEncoding();
         } while (! $this->isTooManyRedirects(++$redirects));
         return $response;
@@ -301,6 +324,20 @@ class SimpleUserAgent
             $request->readCookiesFromJar($this->cookie_jar, $url);
         }
         $this->authenticator->addHeaders($request, $url);
+
+        // Add Referer header, if not set explicitely
+        if( $this->http_referer && is_array($headers = $request->getHeaders()) ) {
+            $custom_referer = false;
+            foreach ($headers as $header) {
+                if (preg_match('~^referer:~i', $header)) {
+                    $custom_referer = true;
+                    break;
+                }
+            }
+            if (! $custom_referer) {
+                $request->addHeaderLine('Referer: '.$this->http_referer);
+            }
+        }
         return $request;
     }
 
@@ -317,6 +354,13 @@ class SimpleUserAgent
     }
 
     /**
+     * Set the function to use for getHostAddr
+     *
+     * @param  function $func Anonymous function to use.
+     */
+    public function setGetHostAddr($func) { $this->getHostAddr = $func; }
+
+    /**
      *    Sets up either a direct route or via a proxy.
      *    @param SimpleUrl $url   Target to fetch as url object.
      *    @return SimpleRoute     Route to take to fetch URL.
@@ -325,13 +369,19 @@ class SimpleUserAgent
     protected function createRoute($url)
     {
         if ($this->proxy) {
-            return new SimpleProxyRoute(
+            $route = new SimpleProxyRoute(
                     $url,
                     $this->proxy,
                     $this->proxy_username,
                     $this->proxy_password);
+        } else {
+            $route = new SimpleRoute($url);
         }
-        return new SimpleRoute($url);
+
+        $route->setUserAgent($this->useragent);
+        $route->setGetHostAddr($this->getHostAddr);
+
+        return $route;
     }
 
     /**

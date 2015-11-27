@@ -190,6 +190,19 @@ class SimpleBrowser
         $this->history = $this->createHistory();
         $this->ignore_frames = false;
         $this->maximum_nested_frames = DEFAULT_MAX_NESTED_FRAMES;
+        $this->setStreamContext(null);
+    }
+
+    /**
+     *    Set the stream context we will use when opening sockets.
+     *    @access public
+     */
+    public function setStreamContext($options = null) {
+        // TODO: Do this nicely without using nasty global variables.
+        //       As this will effect all instances of the SimpleBrowser not
+        //       just this one.
+        global $__simplebrowser__simpleSocketContext;
+        $__simplebrowser__simpleSocketContext = is_array($options) ? $options : array();
     }
 
     /**
@@ -211,6 +224,21 @@ class SimpleBrowser
     {
         return new SimpleBrowserHistory();
     }
+
+    /**
+     *    Set an alternative user-agent to use for requests.
+     *    @param string $agent UserAgent to use.
+     */
+    public function setUserAgent($agent) {
+        $this->user_agent->setUserAgent($agent);
+    }
+
+    /**
+     * Set the function to use for getHostAddr
+     *
+     * @param  function $func Anonymous function to use.
+     */
+    public function setGetHostAddr($func) { $this->user_agent->setGetHostAddr($func); }
 
     /**
      *    Get the HTML parser to use. Can be overridden by
@@ -322,6 +350,11 @@ class SimpleBrowser
      */
     protected function fetch($url, $encoding, $depth = 0)
     {
+        if ($http_referer = $this->history->getUrl()) {
+            $this->user_agent->setReferer($http_referer->asString());
+        } else {
+            $this->user_agent->setReferer(null);
+        }
         $response = $this->user_agent->fetchResponse($url, $encoding);
         if ($response->isError()) {
             return new SimplePage($response);
@@ -1118,6 +1151,23 @@ class SimpleBrowser
     public function submitFormById($id, $additional = false)
     {
         if (! ($form = $this->page->getFormById($id))) {
+            return false;
+        }
+        $success = $this->load(
+                $form->getAction(),
+                $form->submit($additional));
+        return ($success ? $this->getContent() : $success);
+    }
+
+    /**
+     *    Submits a form by the Name.
+     *    @param string $name     The form Name. No submit button value
+     *                            will be sent.
+     *    @return string/boolean  Page on success.
+     *    @access public
+     */
+    function submitFormByName($name, $additional = false) {
+        if (! ($form = $this->page->getFormByName($name))) {
             return false;
         }
         $success = $this->load(

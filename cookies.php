@@ -184,7 +184,7 @@ class SimpleCookie
     public function isExpired($now)
     {
         if (! $this->expiry) {
-            return true;
+            return false;
         }
         if (is_string($now)) {
             $now = strtotime($now);
@@ -308,6 +308,14 @@ class SimpleCookieJar
             $cookie->setHost($host);
         }
         $this->cookies[$this->findFirstMatch($cookie)] = $cookie;
+        if ($cookie->isExpired(time())) {
+            unset($this->cookies[$this->findFirstMatch($cookie)]);
+
+            // Rebuild cookies array without the one we just removed.
+            $new = array();
+            foreach ($this->cookies as $c) { $new[] = $c; }
+            $this->cookies = $new;
+        }
     }
 
     /**
@@ -397,6 +405,7 @@ class SimpleCookieJar
                 $pairs[] = $cookie->getName() . '=' . $cookie->getValue();
             }
         }
-        return $pairs;
+        return array_reverse($pairs);
     }
 }
+

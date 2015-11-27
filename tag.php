@@ -511,7 +511,7 @@ class SimpleTextTag extends SimpleWidget
     public function setValue($value)
     {
         if ($this->getAttribute('type') == 'hidden') {
-            return false;
+            // return false;
         }
         return parent::setValue($value);
     }

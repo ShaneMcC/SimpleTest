@@ -15,6 +15,7 @@ require_once dirname(__FILE__) . '/default_reporter.php';
 /**#@-*/
 
 $GLOBALS['SIMPLETEST_AUTORUNNER_INITIAL_CLASSES'] = get_declared_classes();
+$GLOBALS['SIMPLETEST_AUTORUNNER_INITIAL_PATH'] = getcwd();
 register_shutdown_function('simpletest_autorun');
 
 /**

@@ -21,7 +21,9 @@ require_once dirname(__FILE__) . '/url.php';
  */
 class SimpleRoute
 {
+    private $getHostAddr = null;
     private $url;
+    private $useragent = '';
 
     /**
      *    Sets the target URL.
@@ -70,6 +72,23 @@ class SimpleRoute
     }
 
     /**
+     *    Creates the user agent part of the request.
+     *    @return string          Host line content.
+     *    @access protected
+     */
+    protected function getAgentLine() {
+        return 'User-Agent: ' . (empty($this->useragent) ? 'SimpleTest ' . SimpleTest::getVersion() : $this->useragent);
+    }
+
+    /**
+     *    Set an alternative user-agent to use for requests.
+     *    @param string $agent UserAgent to use.
+     */
+    public function setUserAgent($agent) {
+        $this->useragent = $agent;
+    }
+
+    /**
      *    Opens a socket to the route.
      *    @param string $method      HTTP request method, usually GET.
      *    @param integer $timeout    Connection timeout.
@@ -87,9 +106,34 @@ class SimpleRoute
         if (! $socket->isError()) {
             $socket->write($this->getRequestLine($method) . "\r\n");
             $socket->write($this->getHostLine() . "\r\n");
+            $socket->write($this->getAgentLine() . "\r\n");
             $socket->write("Connection: close\r\n");
         }
         return $socket;
+    }
+
+    /**
+     * Set the function to use for getHostAddr
+     *
+     * @param  function $func Anonymous function to use.
+     */
+    public function setGetHostAddr($func) { $this->getHostAddr = $func; }
+
+    /**
+     * Get the host address to use for the actual socket for the given host.
+     * By default this will just return the host in question, but instead you
+     * could provide an alternative host or IP to lookup and connect to.
+     *
+     * @param string $host Host to connect to
+     * @return  string Host to actually connect to
+     */
+    private function getHostAddr($host) {
+        if (!is_callable($this->getHostAddr)) {
+            $this->getHostAddr = function($host) { return $host; };
+        }
+
+        $call = $this->getHostAddr;
+        return $call($host);
     }
 
     /**
@@ -106,9 +150,9 @@ class SimpleRoute
         if (in_array($scheme, array('file'))) {
             return new SimpleFileSocket($this->url);
         } elseif (in_array($scheme, array('https'))) {
-            return new SimpleSecureSocket($host, $port, $timeout);
+            return new SimpleSecureSocket($this->getHostAddr($host), $port, $timeout);
         } else {
-            return new SimpleSocket($host, $port, $timeout);
+            return new SimpleSocket($this->getHostAddr($host), $port, $timeout);
         }
     }
 }
@@ -275,6 +319,15 @@ class SimpleHttpRequest
     public function addHeaderLine($header_line)
     {
         $this->headers[] = $header_line;
+    }
+
+    /**
+     *    Get the headers to be sent with the request.
+     *    @access public
+     *    @return array
+     */
+    function getHeaders() {
+        return $this->headers;
     }
 
     /**
@@ -474,7 +527,8 @@ class SimpleHttpHeaders
             $this->location = trim($matches[1]);
         }
         if (preg_match('/Set-cookie:(.*)/i', $header_line, $matches)) {
-            $this->cookies[] = $this->parseCookie($matches[1]);
+            $cookie = $this->parseCookie($matches[1]);
+            $this->cookies[] = $cookie;
         }
         if (preg_match('/WWW-Authenticate:\s+(\S+)\s+realm=\"(.*?)\"/i', $header_line, $matches)) {
             $this->authentication = $matches[1];
@@ -495,7 +549,7 @@ class SimpleHttpHeaders
         preg_match('/\s*(.*?)\s*=(.*)/', array_shift($parts), $cookie);
         foreach ($parts as $part) {
             if (preg_match('/\s*(.*?)\s*=(.*)/', $part, $matches)) {
-                $cookie[$matches[1]] = trim($matches[2]);
+                $cookie[strtolower($matches[1])] = trim($matches[2]);
             }
         }
         return new SimpleCookie(
