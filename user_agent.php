@@ -80,6 +80,24 @@ class SimpleUserAgent
     }
 
     /**
+     *    Set the additional Headers array
+     *    @param string $headers additional headers to use going forward.
+     *    @access public
+     */
+    function setAdditionalHeaders($headers) {
+        $this->additional_headers = $headers;
+    }
+
+    /**
+     *    Get the additional Headers array
+     *    @return Current set of additional headers.
+     *    @access public
+     */
+    function getAdditionalHeaders() {
+        return $this->additional_headers;
+    }
+
+    /**
      *    Set an alternative user-agent to use for requests.
      *    @param string $agent UserAgent to use.
      */
