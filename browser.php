@@ -376,6 +376,24 @@ class SimpleBrowser {
     }
 
     /**
+     *    Set the additional Headers array
+     *    @param string $headers additional headers to use going forward.
+     *    @access public
+     */
+    function setAdditionalHeaders($headers) {
+        $this->user_agent->setAdditionalHeaders($headers);
+    }
+
+    /**
+     *    Get the additional Headers array
+     *    @return Current set of additional headers.
+     *    @access public
+     */
+    function getAdditionalHeaders() {
+        return $this->user_agent->getAdditionalHeaders();
+    }
+
+    /**
      *    Ages the cookies by the specified time.
      *    @param integer $interval    Amount in seconds.
      *    @access public
